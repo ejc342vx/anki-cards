@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карточки — ручное повторение</title>
+<style>
+:root{color-scheme:dark;--bg:#101116;--panel:#191b24;--panel2:#222532;--line:#343746;--text:#f3f4f8;--muted:#a4a8b8;--accent:#a99aff;--green:#75d6a1;--red:#ff858c;--yellow:#f3cc75}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:9px 13px;border-radius:10px}button:hover{filter:brightness(1.14)}button:disabled{opacity:.4;cursor:not-allowed}
+.primary{background:var(--accent);color:#171322;border-color:transparent;font-weight:700}.danger{border-color:#754047;color:#ff9ba1}.success{border-color:#376c52;color:#8ce0ae}.muted{color:var(--muted)}.small{font-size:12px}.app{max-width:1100px;margin:auto;padding:24px 18px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:22px}h1{font-size:25px;margin:0}h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0}
+.actions,.tabs,.toolbar{display:flex;gap:8px;flex-wrap:wrap}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:16px}
+.tabs{margin-bottom:14px}.tab.active{background:var(--accent);color:#171322;border-color:transparent;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px}.stat strong{display:block;font-size:23px}.stat span{font-size:12px;color:var(--muted)}
+.category-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.category{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}.category .count{font-size:26px;font-weight:700;margin:5px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:clamp(20px,4vw,38px);min-height:280px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;outline:none}.card:focus{border-color:var(--accent)}.card-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.card-content{font-size:19px;overflow-wrap:anywhere;margin:25px 0}.card-content img{max-width:100%}.card-content pre{white-space:pre-wrap;background:#101116;padding:12px;border-radius:8px}.card-content code{background:#101116;padding:2px 5px;border-radius:5px}.card-content blockquote{border-left:3px solid var(--accent);padding-left:12px;color:var(--muted)}
+.answer{border-top:1px solid var(--line);padding-top:20px;margin-top:22px}.rating{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.rating button{flex:1;min-width:130px;padding:13px}.progress{height:7px;background:#303341;border-radius:10px;overflow:hidden;margin:12px 0}.progress>div{height:100%;background:var(--accent);width:0}
+.field{display:flex;flex-direction:column;gap:6px;margin:10px 0}.field input,.field select,.field textarea{width:100%;background:#11131a;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px}.field textarea{min-height:90px;resize:vertical}
+.editor{min-height:100px;border:1px solid var(--line);background:#11131a;border-radius:9px;padding:12px;outline:none}.editor:focus{border-color:var(--accent)}.toolbar button{padding:6px 9px}
+.list{display:flex;flex-direction:column;gap:8px}.item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--panel2);border-radius:10px}.item-main{min-width:0;flex:1}.item-main strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pill{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:3px 7px;border-radius:20px}
+.hidden{display:none!important}.modal-backdrop{position:fixed;inset:0;background:#000a;display:grid;place-items:center;padding:16px;z-index:10}.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(680px,100%);max-height:90vh;overflow:auto}.modal h2{margin-bottom:14px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.notice{background:#29263b;border:1px solid #514779;padding:11px 13px;border-radius:10px;color:#d9d2ff;font-size:13px;margin-bottom:14px}
+.empty{text-align:center;color:var(--muted);padding:45px 15px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.spacer{flex:1}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.category-grid{grid-template-columns:1fr}.item{align-items:flex-start}.card{min-height:240px}.rating{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><h1>Карточки</h1><div class="muted small">Ручное повторение · локальное хранение</div></div>
+  <div class="actions">
+    <button id="importBtn" class="primary">Импорт карточек</button>
+    <button id="exportBtn">Экспорт карточек</button>
+    <button id="addBtn">＋ Добавить</button>
+    <button id="resetCycleBtn">Сбросить цикл</button>
+    <button id="hardResetBtn" class="danger">Hard reset</button>
+  </div>
+</header>
+<div class="stats">
+  <div class="stat"><strong id="totalStat">0</strong><span>Всего карточек</span></div>
+  <div class="stat"><strong id="unansweredStat">0</strong><span>Не отвечено в цикле</span></div>
+  <div class="stat"><strong id="answeredStat">0</strong><span>Отвечено в цикле</span></div>
+  <div class="stat"><strong id="cycleStat">0</strong><span>Ещё не показано</span></div>
+</div>
+<div class="tabs" id="tabs">
+  <button class="tab active" data-view="home">Обзор</button>
+  <button class="tab" data-view="study">Тренировка</button>
+  <button class="tab" data-view="library">Все карточки</button>
+</div>
+<section id="homeView">
+  <div class="notice">Повторение запускаешь вручную: можно пройти все карточки или только те, на которые ещё не ответила в текущем цикле. Порядок карточек случайный. Ответы и прогресс цикла сохраняются автоматически.</div>
+  <div class="category-grid" id="categoryGrid"></div>
+  <div class="panel" style="margin-top:16px">
+    <div class="row"><h2>Тренировка</h2><span class="spacer"></span><button class="primary" id="startBtn">Выбрать повторение</button></div>
+    <p class="muted" id="homeHint">Импортируй карточки, чтобы начать.</p>
+  </div>
+</section>
+<section id="studyView" class="hidden">
+  <div class="row"><div><h2>Тренировка</h2><div class="muted small" id="studyMeta">—</div></div><span class="spacer"></span><button id="exitBtn">Выйти из тренировки</button></div>
+  <div class="progress"><div id="progressBar"></div></div>
+  <div id="studyArea"></div>
+</section>
+<section id="libraryView" class="hidden">
+  <div class="row"><h2>Библиотека</h2><span class="spacer"></span><select id="filterCategory"><option value="all">Все категории</option><option value="theory">Теория</option><option value="easy">Легкие задачи</option><option value="hard">Сложные задачи</option></select></div>
+  <div class="field"><input id="searchInput" placeholder="Поиск по вопросу и ответу…"></div>
+  <div class="list" id="cardList"></div>
+</section>
+</div>
+<div id="modalRoot"></div>
+<script>
+(() => {
+'use strict';
+const KEY='anki_like_cards_app_v1';
+const CATS={theory:'Теория',easy:'Легкие задачи',hard:'Сложные задачи'};
+let state=load(), view='home', current=null, revealed=false, sessionQueue=[], sessionMode='all';
+function fresh(){return {cards:[],seen:[],cycleAnswers:{},sessionActive:false,stats:{}}}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(!x||!Array.isArray(x.cards))return fresh();return {...fresh(),...x,cycleAnswers:x.cycleAnswers||{}}}catch{return fresh()}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));renderStats()}
+function uid(){return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function norm(s){return String(s||'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().toLocaleLowerCase()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function safeHtml(html){const t=document.createElement('template');t.innerHTML=String(html||'');t.content.querySelectorAll('script,style,iframe,object,embed,form,link,meta').forEach(n=>n.remove());t.content.querySelectorAll('*').forEach(el=>{[...el.attributes].forEach(a=>{if(a.name.startsWith('on')||((a.name==='href'||a.name==='src')&&/^\s*javascript:/i.test(a.value)))el.removeAttribute(a.name)});});return t.innerHTML}
+function shuffled(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function unansweredCards(){return state.cards.filter(c=>state.cycleAnswers[c.id]!==true)}
+function renderStats(){
+ const answered=state.cards.filter(c=>state.cycleAnswers[c.id]===true).length;
+ document.getElementById('totalStat').textContent=state.cards.length;
+ document.getElementById('unansweredStat').textContent=state.cards.length-answered;
+ document.getElementById('answeredStat').textContent=answered;
+ document.getElementById('cycleStat').textContent=state.cards.filter(c=>!state.seen.includes(c.id)).length;
+}
+function renderHome(){
+ const g=document.getElementById('categoryGrid');
+ g.innerHTML=Object.entries(CATS).map(([k,n])=>`<div class="category"><h3>${n}</h3><div class="count">${state.cards.filter(c=>c.category===k).length}</div><div class="muted small">${state.cards.filter(c=>c.category===k&&state.cycleAnswers[c.id]!==true).length} не отвечено</div></div>`).join('');
+ const n=unansweredCards().length;
+ document.getElementById('homeHint').textContent=state.cards.length?`В этом цикле ещё не отвечено: ${n}. Можно запустить повторение всех карточек или только неотвеченных.`:'Импортируй карточки, чтобы начать.';
+}
+function switchView(v){view=v;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));['home','study','library'].forEach(x=>document.getElementById(x+'View').classList.toggle('hidden',x!==v));if(v==='home')renderHome();if(v==='library')renderLibrary();if(v==='study')renderStudy();renderStats()}
+function renderStudy(){
+ const area=document.getElementById('studyArea'), meta=document.getElementById('studyMeta');
+ if(!current){meta.textContent=sessionMode==='all'?'Все карточки':'Только неотвеченные';area.innerHTML='<div class="empty"><h2>Повторение завершено 🎉</h2><p>В этой тренировке карточки закончились. Можешь запустить повторение ещё раз или выбрать другой режим.</p><button id="studyAgain" class="primary">Выбрать повторение</button> <button id="studyHome">На главную</button></div>';document.getElementById('studyAgain').onclick=chooseStudyMode;document.getElementById('studyHome').onclick=()=>switchView('home');return}
+ const c=state.cards.find(x=>x.id===current);if(!c){current=null;renderStudy();return}
+ meta.textContent=`${CATS[c.category]} · ${sessionMode==='all'?'Все карточки':'Неотвеченные в этом цикле'}`;
+ document.getElementById('progressBar').style.width=(state.cards.length?Math.min(100,(state.cards.length-sessionQueue.length)/state.cards.length*100):0)+'%';
+ area.innerHTML=`<article class="card" id="flashcard" tabindex="0"><div><div class="card-label">${CATS[c.category]} · Вопрос</div><div class="card-content">${safeHtml(c.question)}</div>${revealed?`<div class="answer"><div class="card-label">Ответ</div><div class="card-content">${safeHtml(c.answer)}</div></div>`:''}</div><div class="muted small">${revealed?'Оцени, насколько хорошо ответила':'Нажми на карточку, чтобы открыть ответ'}</div></article>${revealed?'<div class="rating"><button class="danger" id="againBtn">Не ответила</button><button class="success" id="goodBtn">Ответила</button></div>':'<div class="row" style="justify-content:center;margin-top:12px"><button class="primary" id="showAnswerBtn">Показать ответ</button></div>'}`;
+ const flip=()=>{if(!revealed){revealed=true;renderStudy()}};
+ document.getElementById('flashcard').onclick=flip;document.getElementById('flashcard').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}};
+ if(!revealed)document.getElementById('showAnswerBtn').onclick=flip;
+ else{document.getElementById('againBtn').onclick=()=>grade(c.id,false);document.getElementById('goodBtn').onclick=()=>grade(c.id,true)}
+}
+function next(){current=null;revealed=false;while(sessionQueue.length){const id=sessionQueue.shift();if(state.cards.some(c=>c.id===id)){current=id;state.seen.push(id);save();break}}renderStudy()}
+function chooseStudyMode(){
+ if(!state.cards.length){alert('Сначала добавь или импортируй карточки.');return}
+ modal(`<h2>Как повторяем?</h2><p class="muted">Выбери набор карточек для этой тренировки.</p><div class="panel"><button class="primary" id="modeAll" style="width:100%">Все карточки (${state.cards.length})</button><p class="muted small">Пройти всю библиотеку в случайном порядке.</p></div><div class="panel"><button id="modeUnanswered" style="width:100%">Только неотвеченные (${unansweredCards().length})</button><p class="muted small">Карточки, на которые ещё не ответила в текущем цикле, включая те, которые пока не показывались.</p></div><div class="modal-actions"><button id="cancelMode">Отмена</button></div>`);
+ document.getElementById('cancelMode').onclick=closeModal;
+ document.getElementById('modeAll').onclick=()=>beginStudy('all');
+ document.getElementById('modeUnanswered').onclick=()=>beginStudy('unanswered');
+}
+function beginStudy(mode){sessionMode=mode;const pool=mode==='all'?state.cards:unansweredCards();sessionQueue=shuffled(pool.map(c=>c.id));current=null;revealed=false;closeModal();switchView('study');next()}
+function start(){chooseStudyMode()}
+function grade(id,good){if(!state.cards.some(x=>x.id===id))return;state.cycleAnswers[id]=good;save();next()}
+function resetCycle(){state.seen=[];state.cycleAnswers={};state.sessionActive=false;sessionQueue=[];current=null;revealed=false;save();renderHome();if(view==='study')renderStudy()}
+function exitStudy(){current=null;revealed=false;sessionQueue=[];switchView('home')}
+function renderLibrary(){
+ const f=document.getElementById('filterCategory').value,s=norm(document.getElementById('searchInput').value);
+ const arr=state.cards.filter(c=>(f==='all'||c.category===f)&&(!s||norm(c.question+' '+c.answer).includes(s)));
+ document.getElementById('cardList').innerHTML=arr.length?arr.map(c=>`<div class="item"><div class="item-main"><strong>${esc(norm(c.question).slice(0,130)||'Без текста')}</strong><span class="muted small">${CATS[c.category]} · ${state.cycleAnswers[c.id]===true?'отвечено в этом цикле':'не отвечено в этом цикле'}</span></div><button data-edit="${c.id}">Изменить</button><button class="danger" data-del="${c.id}">Удалить</button></div>`).join(''):'<div class="empty">Карточек не найдено</div>';
+ document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteCard(b.dataset.del));
+}
+function deleteCard(id){if(!confirm('Удалить эту карточку?'))return;state.cards=state.cards.filter(c=>c.id!==id);state.seen=state.seen.filter(x=>x!==id);delete state.cycleAnswers[id];save();renderLibrary()}
+function modal(content){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" id="backdrop"><div class="modal">${content}</div></div>`;document.getElementById('backdrop').onclick=e=>{if(e.target.id==='backdrop')closeModal()}}
+function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+function openEditor(id){
+ const c=state.cards.find(x=>x.id===id),cat=c?.category||'theory';
+ modal(`<h2>${c?'Редактировать карточку':'Новая карточка'}</h2><div class="field"><label>Категория</label><select id="editCat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===cat?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Вопрос</label><div class="toolbar"><button data-cmd="bold"><b>B</b></button><button data-cmd="italic"><i>I</i></button><button data-cmd="underline"><u>U</u></button><button data-cmd="insertUnorderedList">• Список</button><button data-cmd="formatBlock" data-val="blockquote">Цитата</button></div><div id="editQ" class="editor" contenteditable="true">${c?safeHtml(c.question):''}</div></div><div class="field"><label>Правильный ответ</label><div class="toolbar"><button data-cmd="bold"><b>B</b></button><button data-cmd="italic"><i>I</i></button><button data-cmd="underline"><u>U</u></button><button data-cmd="insertUnorderedList">• Список</button><button data-cmd="formatBlock" data-val="pre">Код</button></div><div id="editA" class="editor" contenteditable="true">${c?safeHtml(c.answer):''}</div></div><div class="muted small">Можно вставлять форматированный текст. Поддерживаются жирный, курсив, списки, ссылки и блоки кода.</div><div class="modal-actions"><button id="cancelEdit">Отмена</button><button class="primary" id="saveEdit">Сохранить</button></div>`);
+ document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{const editor=b.closest('.field').querySelector('.editor');editor.focus();document.execCommand(b.dataset.cmd,false,b.dataset.val||null)});
+ document.getElementById('cancelEdit').onclick=closeModal;
+ document.getElementById('saveEdit').onclick=()=>{const q=safeHtml(document.getElementById('editQ').innerHTML),a=safeHtml(document.getElementById('editA').innerHTML),category=document.getElementById('editCat').value;if(!norm(q)||!norm(a)){alert('Заполни вопрос и ответ.');return}if(c){c.question=q;c.answer=a;c.category=category;c.updatedAt=Date.now()}else{upsert({question:q,answer:a,category})}save();closeModal();renderLibrary();renderHome()};
+}
+function upsert(item){
+ const key=norm(item.question),found=state.cards.find(c=>c.category===item.category&&norm(c.question)===key);
+ if(found){found.question=item.question;found.answer=item.answer;found.updatedAt=Date.now();delete state.cycleAnswers[found.id];state.seen=state.seen.filter(id=>id!==found.id);return 'updated'}
+ state.cards.push({id:uid(),question:item.question,answer:item.answer,category:item.category,createdAt:Date.now()});return 'added'
+}
+function importModal(){
+ modal(`<h2>Импорт карточек</h2><p class="muted">Одна общая загрузка для всех категорий. Можно импортировать JSON-файл или вставить JSON ниже. Категория задаётся у каждой карточки отдельно.</p><div class="field"><label>Выбрать JSON-файл</label><input type="file" id="jsonFile" accept=".json,application/json"></div><div class="field"><label>Или вставить JSON</label><textarea id="importText" rows="9" placeholder='[
+  {"category":"theory","question":"Что такое замыкание?","answer":"Функция вместе с лексическим окружением."},
+  {"category":"easy","question":"Напиши функцию sum","answer":"function sum(a,b){ return a+b }"},
+  {"category":"hard","question":"Реализуй debounce","answer":"..."}
+]'></textarea></div><div class="muted small">Допустимые category: theory, easy, hard. Также можно писать русские названия: «теория», «легкие задачи», «сложные задачи». Форматирование в question и answer можно передавать HTML-разметкой. Повтор вопроса в той же категории обновит существующую карточку новым ответом, а не создаст дубликат.</div><div class="modal-actions"><button id="cancelImport">Отмена</button><button class="primary" id="doImport">Импортировать</button></div>`);
+ document.getElementById('cancelImport').onclick=closeModal;
+ document.getElementById('jsonFile').onchange=async e=>{const file=e.target.files[0];if(file)document.getElementById('importText').value=await file.text()};
+ document.getElementById('doImport').onclick=()=>{try{const data=JSON.parse(document.getElementById('importText').value);const items=Array.isArray(data)?data:(data.cards||[]);if(!items.length)throw Error('В JSON нет массива карточек.');let added=0,updated=0;for(const x of items){const raw=String(x.category||'').toLowerCase().trim();const category=raw==='theory'||raw==='теория'?'theory':raw==='easy'||raw==='легкие задачи'||raw==='лёгкие задачи'?'easy':raw==='hard'||raw==='сложные задачи'?'hard':null;if(!category||!x.question||!x.answer)continue;const r=upsert({category,question:safeHtml(x.question),answer:safeHtml(x.answer)});if(r==='added')added++;else updated++}save();closeModal();renderHome();alert(`Импорт завершён. Добавлено: ${added}. Обновлено: ${updated}.`)}catch(e){alert('Не удалось импортировать: '+e.message)}};
+}
+function exportCards(){
+ if(!state.cards.length){alert('Пока нечего экспортировать.');return}
+ const payload={format:'anki-cards-v1',exportedAt:new Date().toISOString(),cards:state.cards.map(c=>({category:c.category,question:c.question,answer:c.answer}))};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=`anki-cards-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function hardReset(){if(!confirm('Hard reset удалит ВСЕ данные этого приложения из localStorage: карточки, прогресс и цикл. Продолжить?'))return;localStorage.removeItem(KEY);state=fresh();current=null;revealed=false;save();switchView('home')}
+document.getElementById('importBtn').onclick=importModal;document.getElementById('exportBtn').onclick=exportCards;document.getElementById('addBtn').onclick=()=>openEditor();document.getElementById('resetCycleBtn').onclick=()=>{if(confirm('Сбросить цикл? Все карточки снова станут доступными в тренировке.'))resetCycle()};document.getElementById('hardResetBtn').onclick=hardReset;
+document.getElementById('startBtn').onclick=start;document.getElementById('exitBtn').onclick=exitStudy;document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+document.getElementById('filterCategory').onchange=renderLibrary;document.getElementById('searchInput').oninput=renderLibrary;
+renderStats();renderHome();
+})();
+</script>
+</body>
+</html>
